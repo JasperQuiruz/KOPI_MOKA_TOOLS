@@ -2,6 +2,7 @@ const CACHE_NAME = 'kopimoka-tools-v3';
 const ASSETS_TO_CACHE = [
   'index.html',
   'manifest.json',
+  'IMG_20260607_224217.png',
   'nature.png',
   'peso.png',
   'dollar.png',
