@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kopimoka-tools-v1';
+const CACHE_NAME = 'kopimoka-tools-v2';
 const ASSETS_TO_CACHE = [
   'index.html',
   'manifest.json',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   'dollar.png',
   'settings.png',
   'HD-wallpaper-lucky-clover-beautiful-green-life-love-luck-nature.jpg',
+  'https://cdn-icons-png.flaticon.com/512/15518/15518551.png',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdn-icons-png.flaticon.com/512/2935/2935413.png'
