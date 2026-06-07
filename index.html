@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>KOPI_MOKA TOOLS</title>
+    <title>Instant PHP/Coin Converter & Pricelist</title>
     
     <link rel="manifest" href="manifest.json">
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="KOPI_MOKA">
+    <meta name="apple-mobile-web-app-title" content="Coin Converter">
     <meta name="mobile-web-app-capable" content="yes">
     
     <link rel="apple-touch-icon" sizes="512x512" href="peso.png">
@@ -50,7 +50,7 @@
             background: rgba(255, 255, 255, 0.25); 
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            padding: 25px; 
+            padding: 30px; 
             border-radius: 16px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.35); 
             text-align: center; 
@@ -61,7 +61,6 @@
             border: 1px solid rgba(255, 255, 255, 0.3);
             user-select: none;
             box-sizing: border-box;
-            z-index: 10;
         }
         
         .rating-display {
@@ -69,26 +68,26 @@
             top: 15px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 13px; 
+            font-size: 14px; 
             font-weight: 900; 
             color: #000000;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.5);
             background: rgba(255, 255, 255, 0.35); 
-            padding: 6px 12px; 
+            padding: 6px 14px; 
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.3);
             white-space: nowrap;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            z-index: 12;
+            z-index: 4;
         }
 
         .mode-btn {
             position: absolute;
-            top: 16px;
+            top: 17px;
             left: 15px;
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 6px;
             font-size: 10px;
             font-weight: bold;
@@ -99,7 +98,7 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
             transition: background-color 0.2s ease;
-            z-index: 15;
+            z-index: 5;
         }
         
         .bg-green { background-color: #2e7d32; }
@@ -107,15 +106,15 @@
         .bg-blue { background-color: #1a73e8; }
         .bg-blue:hover { background-color: #1557b0; }
         
-        /* ACTIONS WRAPPER (TOP RIGHT CORNER) - FIXED BUTTON CLICK & SIZES */
+        /* ACTIONS WRAPPER (TOP RIGHT CORNER) */
         .top-right-actions {
             position: absolute;
-            top: 16px;
+            top: 18px;
             right: 15px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            z-index: 25;
+            gap: 12px;
+            z-index: 5;
         }
 
         .action-icon-btn {
@@ -125,21 +124,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.3);
-            padding: 5px; /* Tighter box layout */
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            width: 28px;  /* Compact size lock */
-            height: 28px;
-            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .action-icon-btn:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.4);
         }
         .action-icon-btn img {
-            width: 16px !important;  /* Controls the explicit icon size */
-            height: 16px !important;
+            width: 20px;
+            height: 20px;
             object-fit: contain;
         }
         
@@ -151,7 +147,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.55); 
-            z-index: 3000;
+            z-index: 1000;
             justify-content: center;
             align-items: center;
         }
@@ -287,21 +283,20 @@
         }
 
         /* ----------------------------------------------------
-           PRICELIST OVERLAY MODAL STYLING (TOUCH LOCK FIXES)
+           PRICELIST OVERLAY MODAL STYLING (FIXED SCROLL & WOBBLE)
         ---------------------------------------------------- */
         .pricelist-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.65);
-            z-index: 4000; /* Stays clean on top when explicitly active */
+            z-index: 2000;
             justify-content: center;
             align-items: flex-start;
-            overflow-x: hidden; 
-            overflow-y: auto; 
+            overflow-x: hidden; /* Lock horizontal slide */
+            overflow-y: auto; /* Allow natural scrolling */
             padding: 15px 0;
             -webkit-overflow-scrolling: touch;
-            pointer-events: auto; /* Re-enabled for active display */
         }
 
         .pricelist-container-box {
@@ -309,11 +304,11 @@
             background: #f4f6f9;
             border-radius: 16px;
             width: 95%;
-            max-width: 450px;
+            max-width: 480px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.4);
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            overflow: hidden; /* Hard lock horizontal layout escaping */
             margin-top: 5px;
             margin-bottom: 20px;
         }
@@ -326,7 +321,7 @@
             font-weight: bold;
             color: #333;
             cursor: pointer;
-            z-index: 4200;
+            z-index: 2100;
             background: rgba(255, 255, 255, 0.7);
             width: 32px;
             height: 32px;
@@ -368,9 +363,10 @@
         .pdf-btn { background: linear-gradient(135deg, #ff7675, #d63031); }
         .random-btn { background: linear-gradient(135deg, #a29bfe, #6c5ce7); flex: 1; }
 
+        /* SCALER WRAPPER LOCK FOR HIGH-RESOLUTION PREVIEW */
         .scale-wrapper-inner {
             width: 100%;
-            overflow: hidden; 
+            overflow: hidden; /* Stop horizontal shifting/overflow entirely */
             background: #ddd;
             display: flex;
             justify-content: center;
@@ -378,7 +374,7 @@
             padding: 0;
             margin: 0;
             box-sizing: border-box;
-            touch-action: pan-y; 
+            touch-action: pan-y; /* Force touch responses to remain vertical-only */
         }
 
         :root {
@@ -451,7 +447,7 @@
         <span class="close-btn" onclick="closeSettings()">✕</span>
         <label for="divisorVal">Modify Divisor Rule:</label>
         <input type="number" id="divisorVal" value="62.6" step="0.1">
-        
+
         <button class="btn-save" onclick="saveSettings()">Save Changes</button>
     </div>
 </div>
@@ -610,6 +606,7 @@ function calculate() {
 function openPricelist() {
     document.getElementById('pricelistOverlay').style.display = 'flex';
     
+    // Check if user has explicit inputs saved for the pricelist matrix fields, otherwise provide baseline values
     if(localStorage.getItem('pl_lowBase')) {
         document.getElementById('lowBaseInput').value = localStorage.getItem('pl_lowBase');
     }
@@ -617,6 +614,7 @@ function openPricelist() {
         document.getElementById('baseInput').value = localStorage.getItem('pl_base');
     }
     
+    // Reload Palette Selection state if it exists
     if(localStorage.getItem('pl_palette_idx')) {
         let savedIdx = parseInt(localStorage.getItem('pl_palette_idx'));
         applyPaletteByIndex(savedIdx);
@@ -655,7 +653,6 @@ function applyRandomHarmonizedPalette() {
     applyPaletteByIndex(nextIndex);
 }
 
-// Fixed property assignments to clear out caching bugs completely
 function applyPaletteByIndex(index) {
     lastPaletteIndex = index;
     const choice = optimizedPalettes[index];
@@ -768,6 +765,7 @@ function exportToPDF() {
 
 window.addEventListener('resize', adjustScale);
 
+// Initial state load
 if(localStorage.getItem('pl_palette_idx')) {
     applyPaletteByIndex(parseInt(localStorage.getItem('pl_palette_idx')));
 }
