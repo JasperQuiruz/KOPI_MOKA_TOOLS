@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Instant PHP/Coin Converter & Pricelist</title>
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-icon" href="nature.png">
+    <link rel="icon" type="image/png" href="nature.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --theme-color: #2e7d32;
+            --theme-glow: rgba(46, 125, 50, 0.4);
+            --canvas-bg: #ffffff; --title-color: #1e293b; --th-bg: #1e293b; --th-text: #ffffff;
+            --calc-result-color: #1e293b; --col-grey-bg: #f1f5f9; --col-grey-text: #1e293b;
+            --col-white-bg: #ffffff; --col-white-text: #1e293b;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            background-color: #1b5e20;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Base styles for both background layers */
+        body::before, body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Layer 1: Default P TO C Background */
+        body::before {
+            background-image: url('HD-wallpaper-lucky-clover-beautiful-green-life-love-luck-nature.jpg');
+            z-index: 1;
+            opacity: 1;
+        }
+
+        /* Layer 2: Secondary C TO P Background */
+        body::after {
+            background-image: url('Gemini_Generated_Image_les9bjles9bjles9.png');
+            z-index: 2;
+            opacity: 0;
+        }
+
+        /* Transition Triggers */
+        body.c-to-p-bg::before {
+            opacity: 0;
+        }
+
+        body.c-to-p-bg::after {
+            opacity: 1;
+        }
+        
+        /* Elevated Glassmorphism Box */
+        .calc-box { 
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15)); 
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            padding: 40px 30px 35px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25), inset 0 0 0 1px rgba(255,255,255,0.5); 
+            text-align: center; 
+            width: 340px;
+            max-width: 90%;
+            position: relative; 
+            padding-top: 85px; 
+            user-select: none;
+            box-sizing: border-box;
+            animation: fadeIn 0.6s ease-out;
+            z-index: 10;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* Refined Top Elements */
+        .rating-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 13px; 
+            font-weight: 800; 
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4)); 
+            padding: 6px 16px; 
+            border-radius: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.6);
+            white-space: nowrap;
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            height: 32px;      
+            box-sizing: border-box;
+        }
+
+        .mode-btn {
+            position: absolute;
+            top: 20px; 
+            left: 20px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            user-select: none;
+            color: white;
+            border: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 5;
+            height: 32px; 
+            box-sizing: border-box;
+        }
+        .mode-btn:active { transform: scale(0.92); }
+        
+        .bg-green { background: linear-gradient(135deg, #2e7d32, #1b5e20); }
+        .bg-green:hover { background: linear-gradient(135deg, #388e3c, #2e7d32); box-shadow: 0 6px 14px rgba(46,125,50,0.3); }
+        .bg-blue { background: linear-gradient(135deg, #1a73e8, #1557b0); }
+        .bg-blue:hover { background: linear-gradient(135deg, #2b85ff, #1a73e8); box-shadow: 0 6px 14px rgba(26,115,232,0.3); }
+        
+        .top-right-actions {
+            position: absolute;
+            top: 20px; 
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 5;
+            height: 32px; 
+        }
+
+        .action-icon-btn {
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.4));
+            border-radius: 50%; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(255,255,255,0.6);
+            height: 32px; 
+            width: 32px;  
+            box-sizing: border-box;
+        }
+        .action-icon-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.12), inset 0 0 0 1px rgba(255,255,255,1);
+        }
+        .action-icon-btn:active { transform: scale(0.92); }
+        .action-icon-btn img { width: 16px; height: 16px; object-fit: contain; }
+
+        /* Typography & Results */
+        .output-label-container {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px; width: 100%;
+        }
+        .output-label-container img { width: 20px; height: 20px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+
+        .label-with-icon {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 14px; width: 100%;
+        }
+        .label-with-icon img { width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
+
+        .result-label, label.input-label {
+            font-size: 14px; color: #1e293b; margin: 0; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 1.2px; 
+            text-shadow: 0px 2px 4px rgba(255, 255, 255, 0.8);
+        }
+        
+        .result { 
+            font-size: 52px; font-weight: 900; color: #0f172a; margin-bottom: 8px;
+            text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.9), 0px 8px 16px rgba(0,0,0,0.15);
+            letter-spacing: -1px;
+            transition: color 0.3s ease;
+        }
+        
+        .divider { 
+            height: 2px; 
+            background: linear-gradient(90deg, transparent, rgba(0,0,0,0.15), transparent); 
+            margin: 24px 0; 
+            border-radius: 2px;
+        }
+        
+        /* Interactive Input Field */
+        .main-input { 
+            font-size: 32px; padding: 16px; width: 100%; text-align: center; 
+            border: 2px solid transparent; border-radius: 16px; box-sizing: border-box;
+            outline: none; background: rgba(255, 255, 255, 0.65); color: #0f172a; font-weight: 800;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.05), 0 4px 10px rgba(0,0,0,0.02);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 1px;
+        }
+        .main-input::placeholder { color: rgba(15, 23, 42, 0.3); }
+        .main-input:hover {
+            background: rgba(255, 255, 255, 0.85);
+            transform: translateY(-1px);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.05), 0 6px 14px rgba(0,0,0,0.05);
+        }
+        .main-input:focus {
+            background: #ffffff;
+            border-color: var(--theme-color);
+            box-shadow: 0 0 20px var(--theme-glow), inset 0 2px 4px rgba(0,0,0,0.02);
+            transform: translateY(-2px);
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); z-index: 1000;
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .settings-panel {
+            background: #ffffff; border-radius: 20px; padding: 30px; width: 280px;
+            text-align: left; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); position: relative;
+        }
+        
+        .close-btn {
+            position: absolute; top: 16px; right: 20px; font-size: 20px;
+            color: #94a3b8; cursor: pointer; font-weight: bold; user-select: none;
+            transition: color 0.2s;
+        }
+        .close-btn:hover { color: #0f172a; }
+        
+        .settings-panel label {
+            font-size: 12px; color: #475569; margin-bottom: 10px; display: block;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .settings-panel input {
+            font-size: 20px; padding: 12px; text-align: center; width: 100%;
+            border: 2px solid #e2e8f0; border-radius: 12px; box-sizing: border-box;
+            outline: none; margin-bottom: 20px; font-weight: 700; color: #0f172a;
+            transition: border-color 0.3s;
+        }
+        .settings-panel input:focus { border-color: #2e7d32; }
+
+        .btn-save {
+            width: 100%; padding: 14px 0; border-radius: 12px; font-size: 14px;
+            font-weight: 800; cursor: pointer; border: none; text-align: center;
+            text-transform: uppercase; background: linear-gradient(135deg, #2e7d32, #1b5e20); color: white;
+            box-shadow: 0 4px 12px rgba(46,125,50,0.3); transition: all 0.2s; letter-spacing: 0.5px;
+        }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(46,125,50,0.4); }
+        .btn-save:active { transform: scale(0.96); }
+
+        /* Pricelist and Customizer remains styled elegantly */
+        .pricelist-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px); z-index: 2000; justify-content: center;
+            align-items: flex-start; overflow-x: hidden; overflow-y: auto; padding: 15px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .pricelist-overlay.customizing-active { padding-bottom: 250px; }
+        .pricelist-container-box {
+            position: relative; background: #f8fafc; border-radius: 20px; width: 95%; max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; overflow: hidden; 
+            margin-top: 5px; margin-bottom: 20px; animation: fadeIn 0.3s ease-out;
+        }
+        .pricelist-close-top {
+            position: absolute; top: 15px; right: 15px; font-size: 22px; font-weight: bold;
+            color: #334155; cursor: pointer; z-index: 2100; background: rgba(255, 255, 255, 0.9);
+            width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .pricelist-close-top:hover { transform: scale(1.1); }
+        .header-sticky-inner {
+            background: #ffffff; padding: 20px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; flex-direction: column; gap: 16px; padding-right: 60px;
+        }
+        .input-container { display: flex; flex-direction: row; gap: 12px; width: 100%; }
+        .input-row {
+            display: flex; flex-direction: column; justify-content: center; flex: 1;
+            background: #f1f5f9; padding: 8px 14px; border-radius: 12px; border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+        .input-row:focus-within { border-color: #3b82f6; background: #ffffff; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .header-sticky-inner label { font-weight: 800; color: #64748b; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .header-sticky-inner input { width: 100%; padding: 4px 0; font-size: 20px; font-weight: 800; border: none; outline: none; background: transparent; }
+        #lowBaseInput { color: #7c3aed; }
+        #baseInput { color: #2563eb; }
+        .btn-row { display: flex; gap: 10px; width: 100%; position: relative; }
+        .action-btn {
+            color: white; border: none; padding: 12px 8px; font-size: 11px; font-weight: 800;
+            border-radius: 10px; cursor: pointer; text-transform: uppercase; text-align: center; flex: 1.2;
+            letter-spacing: 0.5px; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .action-btn:hover { transform: translateY(-2px); }
+        .action-btn:active { transform: scale(0.95); }
+        .photo-btn { background: linear-gradient(135deg, #f59e0b, #ea580c); box-shadow: 0 4px 10px rgba(234,88,12,0.3); }
+        .pdf-btn { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+        .theme-toggle-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; font-size: 11px; box-shadow: 0 4px 10px rgba(59,130,246,0.3); }
+
+        /* Ensure rest of CSS stays exactly as original below */
+        .customizer-dropdown {
+            display: none; flex-direction: column; background: #ffffff; border-top: 3px solid #3b82f6;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2); padding: 16px; z-index: 3000; width: 100%;
+            max-width: 480px; box-sizing: border-box; position: fixed; bottom: 0; left: 50%;
+            transform: translateX(-50%); border-radius: 24px 24px 0 0; animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); } to { transform: translate(-50%, 0); } }
+        .customizer-dropdown.active { display: flex; }
+        .dropdown-section-title { font-size: 11px; color: #475569; margin: 8px 0 6px 0; font-weight: 700; text-align: left; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dropdown-section-title:first-of-type { margin-top: 0; }
+        .btn-group-row { display: flex; gap: 10px; width: 100%; margin-bottom: 10px; }
+        .word-auto-btn {
+            background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px 6px;
+            font-size: 11px; text-align: center; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 6px; font-weight: 700; border-radius: 10px;
+            text-transform: uppercase; color: #475569; flex: 1; margin: 0; transition: background 0.2s;
+        }
+        .word-auto-btn:hover { background-color: #e2e8f0; }
+        .word-color-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: 10px; }
+        .color-box-cell {
+            width: 100%; height: 28px; cursor: pointer; box-sizing: border-box;
+            border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; transition: transform 0.1s, outline 0.1s;
+        }
+        .color-box-cell:hover { outline: 2px solid #0f172a; transform: scale(1.1); z-index: 2; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .element-select-row {
+            display: flex; flex-direction: row; justify-content: center; align-items: center;
+            margin-bottom: 12px; background: #f1f5f9; padding: 10px; border-radius: 10px;
+        }
+        .selection-status { font-size: 12px; font-weight: 800; color: #ea580c; text-transform: uppercase; letter-spacing: 0.5px; }
+        .scale-wrapper-inner {
+            width: 100%; overflow: hidden; background: #e2e8f0; display: flex; justify-content: center;
+            align-items: flex-start; padding: 0; margin: 0; box-sizing: border-box; touch-action: pan-y; 
+        }
+
+        #photoTargetBlock {
+            width: 1080px !important; height: 2800px !important;
+            min-height: 2800px !important; max-height: 2800px !important;
+            padding: 45px 30px; display: flex; flex-direction: column;
+            background-color: var(--canvas-bg) !important; flex-shrink: 0;
+            transform-origin: top center; box-sizing: border-box; user-select: none; position: relative;
+        }
+        .canvas-title {
+            text-align: center; font-size: 76px; font-weight: 950; padding: 20px 0;
+            color: var(--title-color); text-transform: uppercase; letter-spacing: 2px;
+            border: 1px solid #cbd5e1; border-bottom: none; cursor: pointer;
+        }
+        table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; flex-grow: 1; height: calc(100% - 150px); }
+        tr { height: calc(100% / 36); }
+        th, td { border: 1px solid #cbd5e1; width: 25%; white-space: nowrap; overflow: hidden; vertical-align: middle; }
+        th { background-color: var(--th-bg); color: var(--th-text); font-weight: bold; font-size: 44px; letter-spacing: 1px; height: 105px; cursor: pointer; }
+        td { font-size: 48px; font-weight: bold; padding: 1px 0px !important; cursor: pointer; }
+        .col-grey { background-color: var(--col-grey-bg); color: var(--col-grey-text); }
+        .col-white { background-color: var(--col-white-bg); color: var(--col-white-text); }
+        .calc-result { color: var(--calc-result-color) !important; }
+        .selection-highlight { position: absolute; pointer-events: none; z-index: 100; }
+        .hl-bg { outline: 6px solid #f97316; background-color: rgba(249, 115, 22, 0.15); }
+        .hl-font { outline: 6px dashed #ef4444; background-color: rgba(239, 68, 68, 0.15); }
+    </style>
+</head>
+<body>
+
+<div class="calc-box">
+    <button class="mode-btn bg-green" id="modeBtn" onclick="toggleMode()">P TO C</button>
+    <div class="rating-display" id="rateDisplay">Rate: Not Set</div>
+    
+    <div class="top-right-actions">
+        <span class="action-icon-btn" onclick="openPricelist()" title="Open Pricelist">
+            <img src="https://cdn-icons-png.flaticon.com/512/2935/2935413.png" alt="Pricelist">
+        </span>
+        <span class="action-icon-btn" onclick="openSettings()" title="Settings">
+            <img src="settings.png" alt="Settings">
+        </span>
+    </div>
+
+    <div class="output-label-container">
+        <img id="resIcon" src="dollar.png" alt="Icon">
+        <div class="result-label" id="resLabel">COINS OUT</div>
+    </div>
+    <div class="result" id="outputVal">0</div>
+    
+    <div class="divider"></div>
+    
+    <div class="label-with-icon">
+        <img id="labelIcon" src="peso.png" alt="Icon">
+        <label for="inputVal" class="input-label" id="inpLabel">Enter Pesos (PHP)</label>
+    </div>
+    
+    <input type="text" inputmode="numeric" id="inputVal" class="main-input" placeholder="0" oninput="formatAndCalculate(this)" autofocus>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="settings-panel">
+        <span class="close-btn" onclick="closeSettings()">✕</span>
+        <label for="divisorVal">Modify Divisor Rule:</label>
+        <input type="number" id="divisorVal" value="62.6" step="0.1">
+        <button class="btn-save" onclick="saveSettings()">Save Changes</button>
+    </div>
+</div>
+
+<div class="pricelist-overlay" id="pricelistOverlay">
+    <div class="pricelist-container-box">
+        <span class="pricelist-close-top" onclick="closePricelist()">✕</span>
+        
+        <div class="header-sticky-inner">
+            <div class="input-container">
+                <div class="input-row">
+                    <label>15k↓</label>
+                    <input type="number" id="lowBaseInput" value="6400" inputmode="decimal" oninput="saveAndCalculateMatrix()">
+                </div>
+                <div class="input-row">
+                    <label>20k↑</label>
+                    <input type="number" id="baseInput" value="6260" inputmode="decimal" oninput="saveAndCalculateMatrix()">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="action-btn photo-btn" onclick="exportToPhoto()">Save Photo</button>
+                <button class="action-btn pdf-btn" onclick="exportToPDF()">Save PDF</button>
+                <button class="action-btn theme-toggle-btn" onclick="toggleThemeDropdown(event)">🎨 Color Choose</button>
+            </div>
+        </div>
+
+        <div class="scale-wrapper-inner" id="scaleWrapper">
+            <div id="photoTargetBlock">
+                <div class="canvas-title" id="canvasTitleText" onclick="handleTitleInteraction(event)">POPPO COINS</div>
+                <table>
+                    <thead>
+                        <tr id="tableHeaderRow">
+                            <th onclick="handleHeaderInteraction(0, event)">PRICE</th>
+                            <th onclick="handleHeaderInteraction(1, event)">COINS</th>
+                            <th onclick="handleHeaderInteraction(2, event)">PRICE</th>
+                            <th onclick="handleHeaderInteraction(3, event)">COINS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="customizer-dropdown" id="wordColorDropdown">
+    <div class="element-select-row">
+        <div class="selection-status" id="selectionStatusText">Click items to choose colors</div>
+    </div>
+
+    <div class="btn-group-row">
+        <button class="word-auto-btn" onclick="clearAllHighlights()">
+            <span>❌ Unselect All</span>
+        </button>
+        <button class="word-auto-btn" onclick="applyAutomaticColor()">
+            <span>Reset Selected</span>
+        </button>
+    </div>
+
+    <div class="dropdown-section-title">Theme Swatches</div>
+    <div class="word-color-grid" id="themeColorsGrid"></div>
+
+    <div class="dropdown-section-title">Standard Swatches</div>
+    <div class="word-color-grid" id="standardColorsGrid"></div>
+</div>
+
+<script>
+let isPesoToCoin = true;
+let activeDivisor = localStorage.getItem('savedDivisor') ? parseFloat(localStorage.getItem('savedDivisor')) : 62.6;
+
+let selectedTargets = []; 
+
+updateRateDisplay();
+
+function updateRateDisplay() {
+    let display = document.getElementById('rateDisplay');
+    if (activeDivisor !== null && !isNaN(activeDivisor)) {
+        display.innerText = "Rate: " + activeDivisor.toLocaleString('en-US');
+    } else {
+        display.innerText = "Rate: Not Set";
+    }
+}
+
+function openSettings() {
+    document.getElementById('divisorVal').value = activeDivisor;
+    document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('modalOverlay').style.display = 'none';
+}
+
+function saveSettings() {
+    let inputDivisor = parseFloat(document.getElementById('divisorVal').value);
+    if (!isNaN(inputDivisor) && inputDivisor !== 0) {
+        activeDivisor = inputDivisor;
+        localStorage.setItem('savedDivisor', activeDivisor);
+        updateRateDisplay(); 
+        calculate();
+        closeSettings();
+    } else {
+        alert("Please enter a valid divisor number.");
+    }
+}
+
+function toggleMode() {
+    isPesoToCoin = !isPesoToCoin;
+    let modeBtn = document.getElementById('modeBtn');
+    let resLabel = document.getElementById('resLabel');
+    let resIcon = document.getElementById('resIcon');
+    let inpLabel = document.getElementById('inpLabel');
+    let inputVal = document.getElementById('inputVal');
+    let labelIcon = document.getElementById('labelIcon');
+    
+    // Switch CSS Variables to update glow and border color on focus dynamically
+    if (isPesoToCoin) {
+        document.body.classList.remove('c-to-p-bg');
+        document.documentElement.style.setProperty('--theme-color', '#2e7d32');
+        document.documentElement.style.setProperty('--theme-glow', 'rgba(46, 125, 50, 0.4)');
+        modeBtn.className = "mode-btn bg-green";
+        modeBtn.innerText = "P TO C";
+        resLabel.innerText = "COINS OUT"; 
+        resIcon.src = "dollar.png"; 
+        inpLabel.innerText = "Enter Pesos (PHP)";
+        labelIcon.src = "peso.png"; 
+    } else {
+        document.body.classList.add('c-to-p-bg');
+        document.documentElement.style.setProperty('--theme-color', '#1a73e8');
+        document.documentElement.style.setProperty('--theme-glow', 'rgba(26, 115, 232, 0.4)');
+        modeBtn.className = "mode-btn bg-blue";
+        modeBtn.innerText = "C TO P";
+        resLabel.innerText = "PESOS OUT"; 
+        resIcon.src = "peso.png"; 
+        inpLabel.innerText = "Enter Coins";
+        labelIcon.src = "dollar.png"; 
+    }
+    inputVal.value = "";
+    calculate();
+}
+
+function formatAndCalculate(input) {
+    let cursorPosition = input.selectionStart;
+    let originalLength = input.value.length;
+    let cleanValue = input.value.replace(/[^0-9]/g, '');
+    
+    if (cleanValue === '') {
+        input.value = '';
+        calculate();
+        return;
+    }
+    let formattedValue = parseInt(cleanValue, 10).toLocaleString('en-US');
+    input.value = formattedValue;
+    let newLength = formattedValue.length;
+    input.setSelectionRange(cursorPosition + (newLength - originalLength), cursorPosition + (newLength - originalLength));
+    calculate();
+}
+
+function calculate() {
+    let rawInputString = document.getElementById('inputVal').value.replace(/,/g, '');
+    let x = parseFloat(rawInputString);
+    let output = document.getElementById('outputVal');
+    
+    if (isNaN(x) || isNaN(activeDivisor) || activeDivisor === 0 || x <= 0) {
+        output.innerText = "0";
+        return;
+    }
+    
+    let finalResult = 0;
+    if (isPesoToCoin) {
+        let rawResult = (x / activeDivisor) * 1000000;
+        finalResult = Math.floor(rawResult / 100) * 100;
+    } else {
+        let rawResult = (x / 1000000) * activeDivisor;
+        let firstDecimalDigit = Math.floor((rawResult + 0.00001) * 10) % 10;
+        if (firstDecimalDigit >= 1) {
+            finalResult = Math.ceil(rawResult);
+        } else {
+            finalResult = Math.floor(rawResult);
+        }
+    }
+    output.innerText = finalResult.toLocaleString();
+}
+
+function openPricelist() {
+    document.getElementById('pricelistOverlay').style.display = 'flex';
+    if(localStorage.getItem('pl_lowBase')) document.getElementById('lowBaseInput').value = localStorage.getItem('pl_lowBase');
+    if(localStorage.getItem('pl_base')) document.getElementById('baseInput').value = localStorage.getItem('pl_base');
+    calculateMatrix();
+}
+
+function closePricelist() { 
+    document.getElementById('pricelistOverlay').style.display = 'none'; 
+    document.getElementById('wordColorDropdown').classList.remove('active');
+    document.getElementById('pricelistOverlay').classList.remove('customizing-active');
+    clearAllHighlights();
+}
+
+const leftCoins = [
+    8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 20000, 30000, 
+    40000, 50000, 60000, 70000, 80000, 90000, 100000, 150000, 200000, 
+    250000, 300000, 350000, 400000, 450000, 500000, 550000, 600000, 
+    650000, 700000, 750000, 800000, 850000, 900000, 950000, 1000000
+];
+const rightCosts = [
+    100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 
+    750, 800, 850, 900, 950, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 
+    4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000
+];
+
+const wordBaseColumns = ["#FFFFFF", "#000000", "#E7E6E6", "#1F4E79", "#5B9BD5", "#ED7D31", "#A5A5A5", "#FFC000", "#4472C4", "#70AD47"];
+const wordStandardRow = ["#C00000", "#FF0000", "#FFC000", "#FFFF00", "#92D050", "#00B050", "#00B0F0", "#0070C0", "#002060", "#7030A0"];
+
+function generateShadedMatrix() {
+    const matrix = [];
+    matrix.push([...wordBaseColumns]);
+    matrix.push(wordBaseColumns.map(c => tintShadeColor(c, 0.8)));
+    matrix.push(wordBaseColumns.map(c => tintShadeColor(c, 0.6)));
+    matrix.push(wordBaseColumns.map(c => tintShadeColor(c, 0.4)));
+    matrix.push(wordBaseColumns.map(c => tintShadeColor(c, -0.25)));
+    matrix.push(wordBaseColumns.map(c => tintShadeColor(c, -0.50)));
+    return matrix;
+}
+
+function tintShadeColor(hex, percent) {
+    let R = parseInt(hex.substring(1,3),16);
+    let G = parseInt(hex.substring(3,5),16);
+    let B = parseInt(hex.substring(5,7),16);
+
+    if (percent > 0) {
+        R = Math.round(R + (255 - R) * percent);
+        G = Math.round(G + (255 - G) * percent);
+        B = Math.round(B + (255 - B) * percent);
+    } else {
+        R = Math.round(R * (1 + percent));
+        G = Math.round(G * (1 + percent));
+        B = Math.round(B * (1 + percent));
+    }
+
+    const rHex = Array.from(Math.max(0, Math.min(255, R)).toString(16)).join("");
+    const gHex = Array.from(Math.max(0, Math.min(255, G)).toString(16)).join("");
+    const bHex = Array.from(Math.max(0, Math.min(255, B)).toString(16)).join("");
+    
+    return "#" + (rHex.length==1?"0"+rHex:rHex) + (gHex.length==1?"0"+gHex:gHex) + (bHex.length==1?"0"+bHex:bHex);
+}
+
+function toggleThemeDropdown(e) {
+    e.stopPropagation();
+    const dropdown = document.getElementById('wordColorDropdown');
+    const overlay = document.getElementById('pricelistOverlay');
+    
+    dropdown.classList.toggle('active');
+    
+    if (dropdown.classList.contains('active')) {
+        overlay.classList.add('customizing-active');
+        drawHighlights();
+    } else {
+        overlay.classList.remove('customizing-active');
+        clearAllHighlights();
+    }
+}
+
+function buildWordColorPickerGrids() {
+    const themeGrid = document.getElementById('themeColorsGrid');
+    themeGrid.innerHTML = '';
+    const matrix = generateShadedMatrix();
+    
+    for(let row = 0; row < 6; row++) {
+        for(let col = 0; col < 10; col++) {
+            const color = matrix[row][col];
+            const cell = document.createElement('div');
+            cell.className = 'color-box-cell';
+            cell.style.backgroundColor = color;
+            cell.title = color;
+            cell.onclick = (e) => { e.stopPropagation(); processColorAssignment(color); };
+            themeGrid.appendChild(cell);
+        }
+    }
+
+    const standardGrid = document.getElementById('standardColorsGrid');
+    standardGrid.innerHTML = '';
+    wordStandardRow.forEach(color => {
+        const cell = document.createElement('div');
+        cell.className = 'color-box-cell';
+        cell.style.backgroundColor = color;
+        cell.title = color;
+        cell.onclick = (e) => { e.stopPropagation(); processColorAssignment(color); };
+        standardGrid.appendChild(cell);
+    });
+}
+
+function getOffsetRelative(child, parent) {
+    let top = 0; let left = 0; let el = child;
+    while (el && el !== parent) {
+        top += el.offsetTop;
+        left += el.offsetLeft;
+        el = el.offsetParent;
+    }
+    return { top, left, width: child.offsetWidth, height: child.offsetHeight };
+}
+
+function drawHighlights() {
+    document.querySelectorAll('.selection-highlight').forEach(el => el.remove());
+    if(!document.getElementById('pricelistOverlay').classList.contains('customizing-active')) return;
+
+    const container = document.getElementById('photoTargetBlock');
+
+    selectedTargets.forEach(target => {
+        const box = document.createElement('div');
+        box.className = `selection-highlight ${target.mode === 'bg' ? 'hl-bg' : 'hl-font'}`;
+        
+        let top, left, width, height;
+
+        if (target.targetType === 'headerCell') {
+            const th = document.querySelectorAll('#tableHeaderRow th')[target.colIndex];
+            const thOffset = getOffsetRelative(th, container);
+            top = thOffset.top;
+            left = thOffset.left;
+            width = thOffset.width;
+            height = thOffset.height;
+        } else if (target.targetType === 'dataCell') {
+            const tbody = document.getElementById('matrixBody');
+            const tr = tbody.children[target.rowIndex];
+            if (tr) {
+                const td = tr.children[target.colIndex];
+                const tdOffset = getOffsetRelative(td, container);
+                top = tdOffset.top;
+                left = tdOffset.left;
+                width = tdOffset.width;
+                height = tdOffset.height;
+            }
+        } else if (target.targetType === 'title') {
+            const title = document.getElementById('canvasTitleText');
+            const titleOffset = getOffsetRelative(title, container);
+            top = titleOffset.top;
+            left = titleOffset.left;
+            width = titleOffset.width;
+            height = titleOffset.height;
+        }
+        
+        box.style.top = top + 'px';
+        box.style.left = left + 'px';
+        box.style.width = width + 'px';
+        box.style.height = height + 'px';
+        
+        container.appendChild(box);
+    });
+}
+
+function handleDataCellInteraction(rowIndex, colIndex, event) {
+    if (!document.getElementById('wordColorDropdown').classList.contains('active')) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const hasFont = selectedTargets.some(t => t.targetType === 'dataCell' && t.colIndex === colIndex && t.mode === 'font');
+    const hasBg = selectedTargets.some(t => t.targetType === 'dataCell' && t.colIndex === colIndex && t.mode === 'bg');
+
+    selectedTargets = selectedTargets.filter(t => !(t.targetType === 'dataCell' && t.colIndex === colIndex));
+
+    const rowCount = leftCoins.length;
+    if (hasFont) {
+        for (let r = 0; r < rowCount; r++) {
+            selectedTargets.push({ targetType: 'dataCell', rowIndex: r, colIndex: colIndex, mode: 'bg' });
+        }
+    } else if (hasBg) {
+        // Unselected
+    } else {
+        for (let r = 0; r < rowCount; r++) {
+            selectedTargets.push({ targetType: 'dataCell', rowIndex: r, colIndex: colIndex, mode: 'font' });
+        }
+    }
+    updateLabelFeedback();
+    drawHighlights();
+}
+
+function handleHeaderInteraction(colIndex, event) {
+    if (!document.getElementById('wordColorDropdown').classList.contains('active')) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const hasFont = selectedTargets.some(t => t.targetType === 'headerCell' && t.mode === 'font');
+    const hasBg = selectedTargets.some(t => t.targetType === 'headerCell' && t.mode === 'bg');
+
+    selectedTargets = selectedTargets.filter(t => t.targetType !== 'headerCell');
+
+    if (hasFont) {
+        for (let c = 0; c < 4; c++) {
+            selectedTargets.push({ targetType: 'headerCell', colIndex: c, mode: 'bg' });
+        }
+    } else if (hasBg) {
+        // Unselected
+    } else {
+        for (let c = 0; c < 4; c++) {
+            selectedTargets.push({ targetType: 'headerCell', colIndex: c, mode: 'font' });
+        }
+    }
+    updateLabelFeedback();
+    drawHighlights();
+}
+
+function handleTitleInteraction(event) {
+    if (!document.getElementById('wordColorDropdown').classList.contains('active')) return;
+    event.stopPropagation();
+    event.preventDefault();
+
+    const hasFont = selectedTargets.some(t => t.targetType === 'title' && t.mode === 'font');
+    const hasBg = selectedTargets.some(t => t.targetType === 'title' && t.mode === 'bg');
+
+    selectedTargets = selectedTargets.filter(t => t.targetType !== 'title');
+
+    if (hasFont) {
+        selectedTargets.push({ targetType: 'title', mode: 'bg' });
+    } else if (hasBg) {
+        // Unselected
+    } else {
+        selectedTargets.push({ targetType: 'title', mode: 'font' });
+    }
+    updateLabelFeedback();
+    drawHighlights();
+}
+
+function updateLabelFeedback() {
+    const label = document.getElementById('selectionStatusText');
+    if (selectedTargets.length === 0) {
+        label.innerText = "Click Items to Choose Colors";
+        label.style.color = "#ea580c";
+    } else {
+        label.innerText = `Items selected: ${selectedTargets.length}`;
+        label.style.color = "#2e7d32";
+    }
+}
+
+function clearAllHighlights() {
+    selectedTargets = [];
+    updateLabelFeedback();
+    drawHighlights();
+}
+
+function processColorAssignment(colorHex) {
+    if (selectedTargets.length === 0) {
+        alert("Please tap any column cell, header row, or the Main Title banner to customize its color.");
+        return;
+    }
+
+    let customStylesRegistry = JSON.parse(localStorage.getItem('custom_pricelist_styles_v4')) || { cells: {}, headerCells: {}, title: {} };
+
+    selectedTargets.forEach(target => {
+        if (target.targetType === 'title') {
+            if (!customStylesRegistry.title) customStylesRegistry.title = {};
+            if (target.mode === 'bg') customStylesRegistry.title.bg = colorHex;
+            else customStylesRegistry.title.font = colorHex;
+        } else if (target.targetType === 'headerCell') {
+            const key = "h_" + target.colIndex;
+            if (!customStylesRegistry.headerCells[key]) customStylesRegistry.headerCells[key] = {};
+            if (target.mode === 'bg') customStylesRegistry.headerCells[key].bg = colorHex;
+            else customStylesRegistry.headerCells[key].font = colorHex;
+        } else if (target.targetType === 'dataCell') {
+            const key = "r" + target.rowIndex + "_c" + target.colIndex;
+            if (!customStylesRegistry.cells[key]) customStylesRegistry.cells[key] = {};
+            if (target.mode === 'bg') customStylesRegistry.cells[key].bg = colorHex;
+            else customStylesRegistry.cells[key].font = colorHex;
+        }
+    });
+
+    localStorage.setItem('custom_pricelist_styles_v4', JSON.stringify(customStylesRegistry));
+    loadCustomStyles();
+}
+
+function applyAutomaticColor() {
+    if (selectedTargets.length === 0) {
+        localStorage.removeItem('custom_pricelist_styles_v4');
+        calculateMatrix();
+        clearAllHighlights();
+        return;
+    }
+
+    let customStylesRegistry = JSON.parse(localStorage.getItem('custom_pricelist_styles_v4')) || { cells: {}, headerCells: {}, title: {} };
+
+    selectedTargets.forEach(target => {
+        if (target.targetType === 'title' && customStylesRegistry.title) {
+            delete customStylesRegistry.title[target.mode];
+        } else if (target.targetType === 'headerCell') {
+            const key = "h_" + target.colIndex;
+            if (customStylesRegistry.headerCells[key]) {
+                delete customStylesRegistry.headerCells[key][target.mode];
+                if (Object.keys(customStylesRegistry.headerCells[key]).length === 0) delete customStylesRegistry.headerCells[key];
+            }
+        } else if (target.targetType === 'dataCell') {
+            const key = "r" + target.rowIndex + "_c" + target.colIndex;
+            if (customStylesRegistry.cells[key]) {
+                delete customStylesRegistry.cells[key][target.mode];
+                if (Object.keys(customStylesRegistry.cells[key]).length === 0) delete customStylesRegistry.cells[key];
+            }
+        }
+    });
+
+    localStorage.setItem('custom_pricelist_styles_v4', JSON.stringify(customStylesRegistry));
+    calculateMatrix();
+    clearAllHighlights();
+}
+
+function loadCustomStyles() {
+    let styles = JSON.parse(localStorage.getItem('custom_pricelist_styles_v4')) || { cells: {}, headerCells: {}, title: {} };
+    
+    const titleElement = document.getElementById('canvasTitleText');
+    titleElement.style.removeProperty('background-color');
+    titleElement.style.removeProperty('color');
+    
+    const headerCells = document.querySelectorAll('#tableHeaderRow th');
+    headerCells.forEach(th => { 
+        th.style.removeProperty('background-color'); 
+        th.style.removeProperty('color'); 
+    });
+    
+    const allDataCells = document.querySelectorAll('#matrixBody tr td');
+    allDataCells.forEach(td => { 
+        td.style.removeProperty('background-color'); 
+        td.style.removeProperty('color'); 
+    });
+
+    if (styles.title) {
+        if (styles.title.bg) titleElement.style.setProperty('background-color', styles.title.bg, 'important');
+        if (styles.title.font) titleElement.style.setProperty('color', styles.title.font, 'important');
+    }
+
+    if (styles.headerCells) {
+        for (const key in styles.headerCells) {
+            const colIndex = parseInt(key.replace('h_', ''));
+            const th = headerCells[colIndex];
+            if (th) {
+                if (styles.headerCells[key].bg) th.style.setProperty('background-color', styles.headerCells[key].bg, 'important');
+                if (styles.headerCells[key].font) th.style.setProperty('color', styles.headerCells[key].font, 'important');
+            }
+        }
+    }
+
+    if (styles.cells) {
+        const tbody = document.getElementById('matrixBody');
+        for (const key in styles.cells) {
+            const parts = key.match(/r(\d+)_c(\d+)/);
+            if (parts) {
+                const r = parseInt(parts[1]);
+                const c = parseInt(parts[2]);
+                const tr = tbody.children[r];
+                if (tr) {
+                    const td = tr.children[c];
+                    if (td) {
+                        if (styles.cells[key].bg) td.style.setProperty('background-color', styles.cells[key].bg, 'important');
+                        if (styles.cells[key].font) td.style.setProperty('color', styles.cells[key].font, 'important');
+                    }
+                }
+            }
+        }
+    }
+}
+
+function saveAndCalculateMatrix() {
+    localStorage.setItem('pl_lowBase', document.getElementById('lowBaseInput').value);
+    localStorage.setItem('pl_base', document.getElementById('baseInput').value);
+    calculateMatrix();
+}
+
+function calculateMatrix() {
+    const baseVal = parseFloat(document.getElementById('baseInput').value);
+    const lowBaseVal = parseFloat(document.getElementById('lowBaseInput').value);
+    const tbody = document.getElementById('matrixBody');
+    tbody.innerHTML = '';
+
+    if (isNaN(baseVal) || baseVal <= 0 || isNaN(lowBaseVal) || lowBaseVal <= 0) return;
+
+    for (let i = 0; i < leftCoins.length; i++) {
+        const coinLeft = leftCoins[i];
+        const costRight = rightCosts[i];
+        const activeBaseVal = (coinLeft <= 15000) ? lowBaseVal : baseVal;
+
+        let exactPesosLeft = (coinLeft / 1000000) * activeBaseVal;
+        const wholePart = Math.floor(exactPesosLeft);
+        const firstDecimalDigit = Math.floor(parseFloat((exactPesosLeft - wholePart).toFixed(4)) * 10);
+        let computedCostLeft = (firstDecimalDigit >= 1) ? wholePart + 1 : wholePart;
+
+        const exactCoinsRight = (costRight / baseVal) * 1000000;
+        const computedCoinsRight = Math.floor(parseFloat(exactCoinsRight.toFixed(4)) / 100) * 100;
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="col-grey calc-result" onclick="handleDataCellInteraction(${i}, 0, event)">₱${computedCostLeft.toLocaleString()}</td>
+                <td class="col-white" onclick="handleDataCellInteraction(${i}, 1, event)">${coinLeft.toLocaleString()}</td>
+                <td class="col-grey" onclick="handleDataCellInteraction(${i}, 2, event)">₱${costRight.toLocaleString()}</td>
+                <td class="col-white calc-result" onclick="handleDataCellInteraction(${i}, 3, event)">${computedCoinsRight.toLocaleString()}</td>
+            </tr>`;
+    }
+    adjustScale();
+    loadCustomStyles();
+    drawHighlights();
+}
+
+function adjustScale() {
+    const target = document.getElementById('photoTargetBlock');
+    const wrapper = document.getElementById('scaleWrapper');
+    const containerWidth = wrapper.clientWidth;
+    if(!containerWidth) return;
+    const scaleFactor = containerWidth / 1080;
+    target.style.transform = `scale(${scaleFactor})`;
+    wrapper.style.height = `${2800 * scaleFactor}px`;
+}
+
+document.addEventListener('click', function(event) {
+    const dropdown = document.getElementById('wordColorDropdown');
+    const toggleBtn = document.querySelector('.theme-toggle-btn');
+    const overlay = document.getElementById('pricelistOverlay');
+    
+    if (!dropdown.contains(event.target) && 
+        event.target !== toggleBtn && 
+        !document.getElementById('tableHeaderRow').contains(event.target) &&
+        !document.getElementById('matrixBody').contains(event.target) &&
+        event.target !== document.getElementById('canvasTitleText') &&
+        overlay.style.display === 'flex') {
+        
+        dropdown.classList.remove('active');
+        overlay.classList.remove('customizing-active');
+        clearAllHighlights();
+    }
+});
+
+function exportToPhoto() {
+    const baseVal = document.getElementById('baseInput').value;
+    const targetElement = document.getElementById('photoTargetBlock');
+    const currentTransform = targetElement.style.transform;
+    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+    targetElement.style.transform = 'none';
+
+    html2canvas(targetElement, {
+        width: 1080, height: 2800, scale: 1, logging: false, backgroundColor: currentBgColor
+    }).then(canvas => {
+        const downloadTrigger = document.createElement('a');
+        downloadTrigger.href = canvas.toDataURL("image/png");
+        downloadTrigger.download = `POPPO_COINS_${baseVal}.png`;
+        document.body.appendChild(downloadTrigger);
+        downloadTrigger.click();
+        document.body.removeChild(downloadTrigger);
+        targetElement.style.transform = currentTransform;
+        adjustScale();
+    });
+}
+
+function exportToPDF() {
+    const baseVal = document.getElementById('baseInput').value;
+    const targetElement = document.getElementById('photoTargetBlock');
+    const currentTransform = targetElement.style.transform;
+    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+    targetElement.style.transform = 'none';
+
+    html2canvas(targetElement, {
+        width: 1080, height: 2800, scale: 2, logging: false, backgroundColor: currentBgColor
+    }).then(canvas => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'a4'); 
+        const pageWidth = pdf.internal.pageSize.getWidth();   
+        const pageHeight = pdf.internal.pageSize.getHeight(); 
+        const cardWidth = pageWidth / 2; 
+        const cardHeight = cardWidth * (2800 / 1080); 
+        const startingY = (pageHeight - cardHeight) / 2;
+        
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, startingY, cardWidth, cardHeight);
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', cardWidth, startingY, cardWidth, cardHeight);
+        pdf.save(`POPPO_COINS_2x_Portrait_${baseVal}.pdf`);
+        targetElement.style.transform = currentTransform;
+        adjustScale();
+    });
+}
+
+window.addEventListener('resize', adjustScale);
+buildWordColorPickerGrids();
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Offline mode ready.'))
+            .catch(err => console.log('Service worker failed', err));
+    });
+}
+</script>
+
+</body>
+</html>
