@@ -1118,19 +1118,30 @@ document.addEventListener('click', function(event) {
 function exportToPhoto() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const currentTransform = targetElement.style.transform;
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
     
-    // Save and clear the specific scroll position of the custom overlay container
+    // 1. Save original layout state
     const overlay = document.getElementById('pricelistOverlay');
     const prevScrollTop = overlay ? overlay.scrollTop : 0;
-    if (overlay) overlay.scrollTop = 0; 
+    const originalTransform = targetElement.style.transform;
+    const originalPosition = targetElement.style.position;
+    const originalTop = targetElement.style.top;
+    const originalLeft = targetElement.style.left;
+    const originalZIndex = targetElement.style.zIndex;
 
-    // Strip transform dynamically
-    targetElement.style.transform = 'none';
+    // 2. Reset scroll to top
+    if (overlay) overlay.scrollTop = 0; 
     window.scrollTo(0, 0);
 
-    // Give the PWA rendering architecture a brief moment to pass a layout reflow 
+    // 3. Force the element to the absolute top-left of the viewport.
+    // This absolutely prevents bounding-box clipping and parent div offsets.
+    targetElement.style.transform = 'none';
+    targetElement.style.position = 'absolute';
+    targetElement.style.top = '0px';
+    targetElement.style.left = '0px';
+    targetElement.style.zIndex = '9999';
+
+    // 4. Give the browser time to reflow the unscaled DOM (150ms is safer for mobile)
     setTimeout(() => {
         html2canvas(targetElement, {
             width: 1080, 
@@ -1138,8 +1149,6 @@ function exportToPhoto() {
             scale: 1, 
             scrollX: 0,
             scrollY: 0,
-            x: 0, // Force local top coordinate anchoring
-            y: 0, // Force local left coordinate anchoring
             windowWidth: 1080,
             windowHeight: 2824,
             logging: false, 
@@ -1157,35 +1166,52 @@ function exportToPhoto() {
                 console.error("Error during download serialization:", err);
                 alert("Export failed: App sandbox memory limits exceeded.");
             } finally {
-                // Guaranteed safety fallback execution
-                targetElement.style.transform = currentTransform;
-                if (overlay) overlay.scrollTop = prevScrollTop;
-                adjustScale();
-                canvas = null; // Free memory context pointer immediately
+                restoreLayout();
             }
         }).catch(error => {
             console.error("html2canvas generation error:", error);
-            targetElement.style.transform = currentTransform;
-            if (overlay) overlay.scrollTop = prevScrollTop;
-            adjustScale();
             alert("Could not compile image asset. Please try again.");
+            restoreLayout();
         });
-    }, 60); // 60ms delay ensures browser layout engines execute a paint cycle
+    }, 150); 
+    
+    function restoreLayout() {
+        targetElement.style.transform = originalTransform;
+        targetElement.style.position = originalPosition;
+        targetElement.style.top = originalTop;
+        targetElement.style.left = originalLeft;
+        targetElement.style.zIndex = originalZIndex;
+        if (overlay) overlay.scrollTop = prevScrollTop;
+        adjustScale();
+    }
 }
 
 function exportToPDF() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const currentTransform = targetElement.style.transform;
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
     
+    // 1. Save original layout state
     const overlay = document.getElementById('pricelistOverlay');
     const prevScrollTop = overlay ? overlay.scrollTop : 0;
-    if (overlay) overlay.scrollTop = 0;
+    const originalTransform = targetElement.style.transform;
+    const originalPosition = targetElement.style.position;
+    const originalTop = targetElement.style.top;
+    const originalLeft = targetElement.style.left;
+    const originalZIndex = targetElement.style.zIndex;
 
-    targetElement.style.transform = 'none';
+    // 2. Reset scroll to top
+    if (overlay) overlay.scrollTop = 0;
     window.scrollTo(0, 0);
 
+    // 3. Force to absolute top-left
+    targetElement.style.transform = 'none';
+    targetElement.style.position = 'absolute';
+    targetElement.style.top = '0px';
+    targetElement.style.left = '0px';
+    targetElement.style.zIndex = '9999';
+
+    // 4. Wait for repaint
     setTimeout(() => {
         html2canvas(targetElement, {
             width: 1080, 
@@ -1193,8 +1219,6 @@ function exportToPDF() {
             scale: 2, 
             scrollX: 0,
             scrollY: 0,
-            x: 0,
-            y: 0,
             windowWidth: 1080,
             windowHeight: 2824,
             logging: false, 
@@ -1217,19 +1241,24 @@ function exportToPDF() {
                 console.error("PDF engine composition error:", err);
                 alert("Failed to compile PDF binary data.");
             } finally {
-                targetElement.style.transform = currentTransform;
-                if (overlay) overlay.scrollTop = prevScrollTop;
-                adjustScale();
-                canvas = null; 
+                restoreLayout();
             }
         }).catch(error => {
             console.error("html2canvas PDF generation error:", error);
-            targetElement.style.transform = currentTransform;
-            if (overlay) overlay.scrollTop = prevScrollTop;
-            adjustScale();
             alert("Could not compile PDF asset. Please try again.");
+            restoreLayout();
         });
-    }, 60);
+    }, 150);
+    
+    function restoreLayout() {
+        targetElement.style.transform = originalTransform;
+        targetElement.style.position = originalPosition;
+        targetElement.style.top = originalTop;
+        targetElement.style.left = originalLeft;
+        targetElement.style.zIndex = originalZIndex;
+        if (overlay) overlay.scrollTop = prevScrollTop;
+        adjustScale();
+    }
 }
 
 window.addEventListener('resize', adjustScale);
