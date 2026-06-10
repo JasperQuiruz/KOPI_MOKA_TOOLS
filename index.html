@@ -1114,41 +1114,38 @@ document.addEventListener('click', function(event) {
     }
 });
 
-/* FIXED EXPORT FUNCTIONS TO PREVENT WINDOW CLIPPING GAPS & CONTEXT LOCKUPS */
+/* BODY-ISOLATED EXPORT FUNCTIONS TO BYPASS OVERFLOW CLIPPING */
 function exportToPhoto() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ffffff';
     
-    // 1. Save original layout state
-    const overlay = document.getElementById('pricelistOverlay');
-    const prevScrollTop = overlay ? overlay.scrollTop : 0;
-    const originalTransform = targetElement.style.transform;
-    const originalPosition = targetElement.style.position;
-    const originalTop = targetElement.style.top;
-    const originalLeft = targetElement.style.left;
-    const originalZIndex = targetElement.style.zIndex;
+    // 1. Create a deep clone to bypass parent layout constraints, overflows, and scroll positions
+    const clone = targetElement.cloneNode(true);
+    
+    // 2. Force full, unconstrained absolute visibility at root body level
+    clone.style.transform = 'none';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '-99999'; // Invisible underneath the active UI layer
+    clone.style.width = '1080px';
+    clone.style.height = '2824px';
+    clone.style.visibility = 'visible';
+    clone.style.display = 'flex';
+    
+    document.body.appendChild(clone);
 
-    // 2. Reset scroll to top
-    if (overlay) overlay.scrollTop = 0; 
-    window.scrollTo(0, 0);
-
-    // 3. Force the element to the absolute top-left of the viewport.
-    // This absolutely prevents bounding-box clipping and parent div offsets.
-    targetElement.style.transform = 'none';
-    targetElement.style.position = 'absolute';
-    targetElement.style.top = '0px';
-    targetElement.style.left = '0px';
-    targetElement.style.zIndex = '9999';
-
-    // 4. Give the browser time to reflow the unscaled DOM (150ms is safer for mobile)
+    // 3. Brief execution cycle padding to let browser frame engine paint the clean layout root boundary
     setTimeout(() => {
-        html2canvas(targetElement, {
+        html2canvas(clone, {
             width: 1080, 
             height: 2824, 
             scale: 1, 
             scrollX: 0,
             scrollY: 0,
+            x: 0, 
+            y: 0, 
             windowWidth: 1080,
             windowHeight: 2824,
             logging: false, 
@@ -1166,59 +1163,46 @@ function exportToPhoto() {
                 console.error("Error during download serialization:", err);
                 alert("Export failed: App sandbox memory limits exceeded.");
             } finally {
-                restoreLayout();
+                // Always scrub DOM artifacts immediately
+                if (clone.parentNode) document.body.removeChild(clone);
+                canvas = null; 
             }
         }).catch(error => {
             console.error("html2canvas generation error:", error);
+            if (clone.parentNode) document.body.removeChild(clone);
             alert("Could not compile image asset. Please try again.");
-            restoreLayout();
         });
-    }, 150); 
-    
-    function restoreLayout() {
-        targetElement.style.transform = originalTransform;
-        targetElement.style.position = originalPosition;
-        targetElement.style.top = originalTop;
-        targetElement.style.left = originalLeft;
-        targetElement.style.zIndex = originalZIndex;
-        if (overlay) overlay.scrollTop = prevScrollTop;
-        adjustScale();
-    }
+    }, 50); 
 }
 
 function exportToPDF() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
+    const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ffffff';
     
-    // 1. Save original layout state
-    const overlay = document.getElementById('pricelistOverlay');
-    const prevScrollTop = overlay ? overlay.scrollTop : 0;
-    const originalTransform = targetElement.style.transform;
-    const originalPosition = targetElement.style.position;
-    const originalTop = targetElement.style.top;
-    const originalLeft = targetElement.style.left;
-    const originalZIndex = targetElement.style.zIndex;
+    // 1. Create matching decoupled root clone
+    const clone = targetElement.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.position = 'fixed';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.zIndex = '-99999';
+    clone.style.width = '1080px';
+    clone.style.height = '2824px';
+    clone.style.visibility = 'visible';
+    clone.style.display = 'flex';
+    
+    document.body.appendChild(clone);
 
-    // 2. Reset scroll to top
-    if (overlay) overlay.scrollTop = 0;
-    window.scrollTo(0, 0);
-
-    // 3. Force to absolute top-left
-    targetElement.style.transform = 'none';
-    targetElement.style.position = 'absolute';
-    targetElement.style.top = '0px';
-    targetElement.style.left = '0px';
-    targetElement.style.zIndex = '9999';
-
-    // 4. Wait for repaint
     setTimeout(() => {
-        html2canvas(targetElement, {
+        html2canvas(clone, {
             width: 1080, 
             height: 2824, 
-            scale: 2, 
+            scale: 2, // 2x density mapping for ultra high quality vector definition layouts
             scrollX: 0,
             scrollY: 0,
+            x: 0,
+            y: 0,
             windowWidth: 1080,
             windowHeight: 2824,
             logging: false, 
@@ -1241,24 +1225,15 @@ function exportToPDF() {
                 console.error("PDF engine composition error:", err);
                 alert("Failed to compile PDF binary data.");
             } finally {
-                restoreLayout();
+                if (clone.parentNode) document.body.removeChild(clone);
+                canvas = null; 
             }
         }).catch(error => {
             console.error("html2canvas PDF generation error:", error);
+            if (clone.parentNode) document.body.removeChild(clone);
             alert("Could not compile PDF asset. Please try again.");
-            restoreLayout();
         });
-    }, 150);
-    
-    function restoreLayout() {
-        targetElement.style.transform = originalTransform;
-        targetElement.style.position = originalPosition;
-        targetElement.style.top = originalTop;
-        targetElement.style.left = originalLeft;
-        targetElement.style.zIndex = originalZIndex;
-        if (overlay) overlay.scrollTop = prevScrollTop;
-        adjustScale();
-    }
+    }, 50);
 }
 
 window.addEventListener('resize', adjustScale);
