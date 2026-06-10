@@ -366,23 +366,83 @@
             align-items: flex-start; padding: 0; margin: 0; box-sizing: border-box; touch-action: pan-y; 
         }
 
+        /* FIXED ABSOLUTE RENDERING SIZE */
         #photoTargetBlock {
-            width: 1080px !important; height: 2800px !important;
-            min-height: 2800px !important; max-height: 2800px !important;
-            padding: 45px 30px; display: flex; flex-direction: column;
-            background-color: var(--canvas-bg) !important; flex-shrink: 0;
-            transform-origin: top center; box-sizing: border-box; user-select: none; position: relative;
+            width: 1080px !important;
+            height: 2800px !important;
+            min-width: 1080px !important;
+            max-width: 1080px !important;
+            min-height: 2800px !important;
+            max-height: 2800px !important;
+            padding: 40px 30px; 
+            display: flex; 
+            flex-direction: column;
+            background-color: var(--canvas-bg) !important; 
+            flex-shrink: 0;
+            transform-origin: top center; 
+            box-sizing: border-box; 
+            user-select: none; 
+            position: relative;
         }
+        
+        /* FIXED INTEGER-BASED HEADER TITLE */
         .canvas-title {
-            text-align: center; font-size: 76px; font-weight: 950; padding: 20px 0;
-            color: var(--title-color); text-transform: uppercase; letter-spacing: 2px;
-            border: 1px solid #cbd5e1; border-bottom: none; cursor: pointer;
+            text-align: center; 
+            font-size: 76px; 
+            font-weight: 950; 
+            height: 128px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--title-color); 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            border: 1px solid #cbd5e1; 
+            border-bottom: none; 
+            cursor: pointer;
+            box-sizing: border-box;
         }
-        table { width: 100%; border-collapse: collapse; text-align: center; table-layout: fixed; flex-grow: 1; height: calc(100% - 150px); }
-        tr { height: calc(100% / 36); }
-        th, td { border: 1px solid #cbd5e1; width: 25%; white-space: nowrap; overflow: hidden; vertical-align: middle; }
-        th { background-color: var(--th-bg); color: var(--th-text); font-weight: bold; font-size: 44px; letter-spacing: 1px; height: 105px; cursor: pointer; }
-        td { font-size: 48px; font-weight: bold; padding: 1px 0px !important; cursor: pointer; }
+        
+        /* FIXED TABLE GRID ELEMENT */
+        table { 
+            width: 100%; 
+            height: 2592px;
+            border-collapse: collapse; 
+            text-align: center; 
+            table-layout: fixed; 
+            box-sizing: border-box;
+        }
+        
+        /* FIXED RIGID 72px HEIGHT PER ROW (36 TOTAL ROWS = 2592px) */
+        tr { 
+            height: 72px !important; 
+        }
+        
+        th, td { 
+            border: 1px solid #cbd5e1; 
+            width: 25%; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            vertical-align: middle; 
+            box-sizing: border-box;
+        }
+        
+        th { 
+            background-color: var(--th-bg); 
+            color: var(--th-text); 
+            font-weight: bold; 
+            font-size: 44px; 
+            letter-spacing: 1px; 
+            cursor: pointer; 
+        }
+        
+        td { 
+            font-size: 48px; 
+            font-weight: bold; 
+            padding: 0px !important; 
+            cursor: pointer; 
+        }
+        
         .col-grey { background-color: var(--col-grey-bg); color: var(--col-grey-text); }
         .col-white { background-color: var(--col-white-bg); color: var(--col-white-text); }
         .calc-result { color: var(--calc-result-color) !important; }
@@ -1050,87 +1110,72 @@ document.addEventListener('click', function(event) {
     }
 });
 
+/* FIXED EXPORT FUNCTIONS TO PREVENT WINDOW CLIPPING GAPS */
 function exportToPhoto() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const overlay = document.getElementById('pricelistOverlay');
-    
     const currentTransform = targetElement.style.transform;
-    const currentScrollTop = overlay.scrollTop;
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
     
     targetElement.style.transform = 'none';
-    overlay.scrollTop = 0;
+    window.scrollTo(0,0);
 
-    setTimeout(() => {
-        html2canvas(targetElement, {
-            width: 1080, 
-            height: 2800, 
-            windowWidth: 1080,
-            windowHeight: 2800,
-            scale: 1, 
-            logging: false, 
-            backgroundColor: currentBgColor,
-            scrollX: 0,
-            scrollY: 0,
-            useCORS: true
-        }).then(canvas => {
-            const downloadTrigger = document.createElement('a');
-            downloadTrigger.href = canvas.toDataURL("image/png");
-            downloadTrigger.download = `POPPO_COINS_${baseVal}.png`;
-            document.body.appendChild(downloadTrigger);
-            downloadTrigger.click();
-            document.body.removeChild(downloadTrigger);
-            
-            targetElement.style.transform = currentTransform;
-            overlay.scrollTop = currentScrollTop;
-            adjustScale();
-        });
-    }, 50);
+    html2canvas(targetElement, {
+        width: 1080, 
+        height: 2800, 
+        scale: 1, 
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1080,
+        windowHeight: 2800,
+        logging: false, 
+        backgroundColor: currentBgColor
+    }).then(canvas => {
+        const downloadTrigger = document.createElement('a');
+        downloadTrigger.href = canvas.toDataURL("image/png");
+        downloadTrigger.download = `POPPO_COINS_${baseVal}.png`;
+        document.body.appendChild(downloadTrigger);
+        downloadTrigger.click();
+        document.body.removeChild(downloadTrigger);
+        targetElement.style.transform = currentTransform;
+        adjustScale();
+    });
 }
 
 function exportToPDF() {
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
-    const overlay = document.getElementById('pricelistOverlay');
-    
     const currentTransform = targetElement.style.transform;
-    const currentScrollTop = overlay.scrollTop;
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim();
     
     targetElement.style.transform = 'none';
-    overlay.scrollTop = 0;
+    window.scrollTo(0,0);
 
-    setTimeout(() => {
-        html2canvas(targetElement, {
-            width: 1080, 
-            height: 2800, 
-            windowWidth: 1080,
-            windowHeight: 2800,
-            scale: 2, 
-            logging: false, 
-            backgroundColor: currentBgColor,
-            scrollX: 0,
-            scrollY: 0,
-            useCORS: true
-        }).then(canvas => {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'pt', 'a4'); 
-            const pageWidth = pdf.internal.pageSize.getWidth();   
-            const pageHeight = pdf.internal.pageSize.getHeight(); 
-            const cardWidth = pageWidth / 2; 
-            const cardHeight = cardWidth * (2800 / 1080); 
-            const startingY = (pageHeight - cardHeight) / 2;
-            
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, startingY, cardWidth, cardHeight);
-            pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', cardWidth, startingY, cardWidth, cardHeight);
-            pdf.save(`POPPO_COINS_2x_Portrait_${baseVal}.pdf`);
-            
-            targetElement.style.transform = currentTransform;
-            overlay.scrollTop = currentScrollTop;
-            adjustScale();
-        });
-    }, 50);
+    html2canvas(targetElement, {
+        width: 1080, 
+        height: 2800, 
+        scale: 2, 
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 1080,
+        windowHeight: 2800,
+        logging: false, 
+        backgroundColor: currentBgColor
+    }).then(canvas => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'pt', 'a4'); 
+        const pageWidth = pdf.internal.pageSize.getWidth();   
+        const pageHeight = pdf.internal.pageSize.getHeight(); 
+        const cardWidth = pageWidth / 2; 
+        const cardHeight = cardWidth * (2800 / 1080); 
+        const startingY = (pageHeight - cardHeight) / 2;
+        
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', 0, startingY, cardWidth, cardHeight);
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.98), 'JPEG', cardWidth, startingY, cardWidth, cardHeight);
+        pdf.save(`POPPO_COINS_2x_Portrait_${baseVal}.pdf`);
+        targetElement.style.transform = currentTransform;
+        adjustScale();
+    });
 }
 
 window.addEventListener('resize', adjustScale);
