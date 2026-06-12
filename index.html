@@ -1115,20 +1115,32 @@ document.addEventListener('click', function(event) {
 });
 
 /* BODY-ISOLATED EXPORT FUNCTIONS TO BYPASS OVERFLOW CLIPPING */
+let isExporting = false; // Click-lock to prevent multi-click crashing
+
 function exportToPhoto() {
+    if (isExporting) return;
+    isExporting = true;
+    
+    // Provide visual feedback
+    const btn = document.querySelector('.photo-btn');
+    const originalText = btn.innerText;
+    btn.innerText = "SAVING...";
+
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ffffff';
     
-    // 1. Create a deep clone to bypass parent layout constraints, overflows, and scroll positions
+    // 1. Create clone and STRIP IDs to prevent DOM confusion on the second run
     const clone = targetElement.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
     
     // 2. Force full, unconstrained absolute visibility at root body level
     clone.style.transform = 'none';
     clone.style.position = 'fixed';
     clone.style.top = '0';
     clone.style.left = '0';
-    clone.style.zIndex = '-99999'; // Invisible underneath the active UI layer
+    clone.style.zIndex = '-99999'; 
     clone.style.width = '1080px';
     clone.style.height = '2824px';
     clone.style.visibility = 'visible';
@@ -1136,7 +1148,7 @@ function exportToPhoto() {
     
     document.body.appendChild(clone);
 
-    // 3. Brief execution cycle padding to let browser frame engine paint the clean layout root boundary
+    // 3. Execution cycle padding (increased to 100ms for safety)
     setTimeout(() => {
         html2canvas(clone, {
             width: 1080, 
@@ -1158,30 +1170,52 @@ function exportToPhoto() {
                 downloadTrigger.download = `POPPO_COINS_${baseVal}.png`;
                 document.body.appendChild(downloadTrigger);
                 downloadTrigger.click();
-                document.body.removeChild(downloadTrigger);
+                
+                // Delay removal of anchor so the download stream doesn't jam
+                setTimeout(() => {
+                    if (downloadTrigger.parentNode) document.body.removeChild(downloadTrigger);
+                }, 200);
             } catch (err) {
                 console.error("Error during download serialization:", err);
                 alert("Export failed: App sandbox memory limits exceeded.");
             } finally {
-                // Always scrub DOM artifacts immediately
+                // Always scrub DOM artifacts immediately & force free canvas memory
                 if (clone.parentNode) document.body.removeChild(clone);
-                canvas = null; 
+                if (canvas) {
+                    canvas.width = 0; 
+                    canvas.height = 0;
+                }
+                isExporting = false;
+                btn.innerText = originalText;
             }
         }).catch(error => {
             console.error("html2canvas generation error:", error);
             if (clone.parentNode) document.body.removeChild(clone);
+            isExporting = false;
+            btn.innerText = originalText;
             alert("Could not compile image asset. Please try again.");
         });
-    }, 50); 
+    }, 100); 
 }
 
 function exportToPDF() {
+    if (isExporting) return;
+    isExporting = true;
+    
+    // Provide visual feedback
+    const btn = document.querySelector('.pdf-btn');
+    const originalText = btn.innerText;
+    btn.innerText = "SAVING...";
+
     const baseVal = document.getElementById('baseInput').value;
     const targetElement = document.getElementById('photoTargetBlock');
     const currentBgColor = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#ffffff';
     
-    // 1. Create matching decoupled root clone
+    // 1. Create matching decoupled root clone and STRIP IDs
     const clone = targetElement.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+
     clone.style.transform = 'none';
     clone.style.position = 'fixed';
     clone.style.top = '0';
@@ -1198,7 +1232,7 @@ function exportToPDF() {
         html2canvas(clone, {
             width: 1080, 
             height: 2824, 
-            scale: 2, // 2x density mapping for ultra high quality vector definition layouts
+            scale: 2, 
             scrollX: 0,
             scrollY: 0,
             x: 0,
@@ -1225,15 +1259,23 @@ function exportToPDF() {
                 console.error("PDF engine composition error:", err);
                 alert("Failed to compile PDF binary data.");
             } finally {
+                // Always scrub DOM artifacts immediately & force free canvas memory
                 if (clone.parentNode) document.body.removeChild(clone);
-                canvas = null; 
+                if (canvas) {
+                    canvas.width = 0; 
+                    canvas.height = 0;
+                }
+                isExporting = false;
+                btn.innerText = originalText;
             }
         }).catch(error => {
             console.error("html2canvas PDF generation error:", error);
             if (clone.parentNode) document.body.removeChild(clone);
+            isExporting = false;
+            btn.innerText = originalText;
             alert("Could not compile PDF asset. Please try again.");
         });
-    }, 50);
+    }, 100);
 }
 
 window.addEventListener('resize', adjustScale);
